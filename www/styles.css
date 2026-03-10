@@ -1,0 +1,78 @@
+/* Grundlayout */
+.content-wrapper,
+.right-side {
+  background: linear-gradient(135deg, #f4f7fb 0%, #eef3f8 100%);
+}
+
+.main-header .logo {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.main-sidebar {
+  background: linear-gradient(180deg, #1c2530 0%, #131920 100%);
+}
+
+.skin-blue .main-sidebar .sidebar .sidebar-menu a {
+  color: #dce3ec;
+  border-radius: 8px;
+  margin: 4px 8px;
+}
+
+.skin-blue .main-sidebar .sidebar .sidebar-menu .active > a,
+.skin-blue .main-sidebar .sidebar .sidebar-menu a:hover {
+  background: #2f9e8f;
+  color: #ffffff;
+}
+
+.box {
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(22, 34, 55, 0.08);
+  border-top: 0;
+}
+
+.box.box-primary > .box-header {
+  background: #24527a;
+  color: #ffffff;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+.box.box-info > .box-header {
+  background: #2f7eaf;
+  color: #ffffff;
+}
+
+.box.box-warning > .box-header {
+  background: #f59f00;
+  color: #ffffff;
+}
+
+.box.box-success > .box-header {
+  background: #2b8a3e;
+  color: #ffffff;
+}
+
+.btn-success {
+  background-color: #2b8a3e;
+  border-color: #2b8a3e;
+}
+
+.btn-primary {
+  background-color: #24527a;
+  border-color: #24527a;
+}
+
+.nav-tabs-custom > .nav-tabs > li.active {
+  border-top-color: #24527a;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+  border-radius: 6px;
+}
+
+@media (max-width: 992px) {
+  .box {
+    margin-bottom: 16px;
+  }
+}

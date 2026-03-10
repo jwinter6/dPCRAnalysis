@@ -1,0 +1,9 @@
+.git
+.gitignore
+.DS_Store
+.Rhistory
+.RData
+.Rproj.user
+renv/library
+renv/staging
+*.tar.gz
