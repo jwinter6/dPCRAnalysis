@@ -19,6 +19,7 @@ Roche Digital LightCycler und Bio-Rad QX sind als Importer-Platzhalter vorbereit
 - Plausibilitäts- und Validierungschecks mit Report
 - Interaktive Übersicht (DT + ggplot2 + plotly)
 - Qualitätsseite mit Kennzahlen und zusätzlichen Plots
+- dpcR-basierter Dichteplot (`dpcr_density`) für λ / positive Moleküle
 - Analyse-Persistenz via `.RData` (Export/Import)
 - Unit-Tests für Import und Validierung (`testthat`)
 
@@ -72,7 +73,7 @@ Roche Digital LightCycler und Bio-Rad QX sind als Importer-Platzhalter vorbereit
 ```r
 install.packages(c(
   "shiny", "shinydashboard", "bslib", "shinyWidgets", "DT", "plotly",
-  "ggplot2", "dplyr", "tidyr", "readr", "tibble", "testthat"
+  "ggplot2", "dplyr", "tidyr", "readr", "tibble", "testthat", "dpcR"
 ))
 ```
 

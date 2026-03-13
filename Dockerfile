@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN R -e "install.packages(c('shiny','shinydashboard','bslib','shinyWidgets','DT','plotly','ggplot2','dplyr','tidyr','readr','tibble','testthat'), repos='https://cloud.r-project.org')"
+RUN R -e "install.packages(c('shiny','shinydashboard','bslib','shinyWidgets','DT','plotly','ggplot2','dplyr','tidyr','readr','tibble','testthat','dpcR'), repos='https://cloud.r-project.org')"
 
 COPY . /srv/shiny-server/
 RUN chown -R shiny:shiny /srv/shiny-server

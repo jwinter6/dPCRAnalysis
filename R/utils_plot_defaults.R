@@ -135,3 +135,51 @@ build_histogram_plot <- function(df, settings) {
     ) +
     ggplot2::scale_fill_brewer(palette = "Set2")
 }
+
+prepare_interactive_plot_data <- function(df, max_points = 60000L) {
+  if (is.null(df) || !is.data.frame(df) || nrow(df) == 0) {
+    return(list(
+      data = df,
+      sampled = FALSE,
+      original_n = 0L,
+      used_n = 0L
+    ))
+  }
+
+  n <- nrow(df)
+  max_points <- as.integer(max_points)
+
+  if (is.na(max_points) || max_points <= 0L) {
+    max_points <- 60000L
+  }
+
+  if (n <= max_points) {
+    return(list(
+      data = df,
+      sampled = FALSE,
+      original_n = as.integer(n),
+      used_n = as.integer(n)
+    ))
+  }
+
+  # Deterministisches Downsampling über gleichmäßig verteilte Indizes.
+  idx <- unique(round(seq(1, n, length.out = max_points)))
+  sampled_df <- df[idx, , drop = FALSE]
+
+  list(
+    data = sampled_df,
+    sampled = TRUE,
+    original_n = as.integer(n),
+    used_n = as.integer(nrow(sampled_df))
+  )
+}
+
+make_interactive_plot <- function(ggplot_obj, tooltip = "text", use_webgl = TRUE) {
+  p <- plotly::ggplotly(ggplot_obj, tooltip = tooltip)
+
+  if (isTRUE(use_webgl)) {
+    p <- plotly::toWebGL(p)
+  }
+
+  p
+}

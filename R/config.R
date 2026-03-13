@@ -55,6 +55,7 @@ DPCR_CHARACTER_COLUMNS <- c(
 DPCR_NUMERIC_COLUMNS <- c("volume", "threshold", "partition", "rfu")
 DPCR_LOGICAL_COLUMNS <- c("invalid_partition", "positive_control")
 DPCR_PLOT_NUMERIC_CANDIDATES <- c("partition", "rfu", "volume", "threshold")
+PLOTLY_USE_WEBGL_DEFAULT <- FALSE
 
 empty_issues_table <- function() {
   tibble::tibble(

@@ -4,24 +4,11 @@ mod_overview_ui <- function(id) {
   shiny::tagList(
     shiny::fluidRow(
       shinydashboard::box(
-        width = 8,
-        title = "Plattendaten (Tabelle)",
-        status = "primary",
-        solidHeader = TRUE,
-        DT::DTOutput(ns("overview_table"))
-      ),
-      shinydashboard::box(
-        width = 4,
+        width = 12,
         title = "Platte auswählen",
         status = "info",
         solidHeader = TRUE,
-        shiny::selectInput(ns("plate_select"), "Plate", choices = c("Bitte laden Sie zunächst Daten" = "")),
-        shiny::selectInput(
-          ns("color_by"),
-          "Farbe nach",
-          choices = c("channel", "reference", "sample", "plate_name", "none"),
-          selected = "channel"
-        )
+        shiny::selectInput(ns("plate_select"), "Plate", choices = c("Bitte laden Sie zunächst Daten" = ""))
       )
     ),
     shiny::fluidRow(
@@ -34,20 +21,52 @@ mod_overview_ui <- function(id) {
         shiny::textInput(ns("plot_subtitle"), "Untertitel", value = "Interaktive Übersicht"),
         shiny::selectInput(ns("x_col"), "X-Spalte", choices = c("partition", "rfu"), selected = "partition"),
         shiny::selectInput(ns("y_col"), "Y-Spalte", choices = c("rfu", "partition"), selected = "rfu"),
+        shiny::selectInput(
+          ns("color_by"),
+          "Farbe nach",
+          choices = c("channel", "reference", "sample", "plate_name", "none"),
+          selected = "channel"
+        ),
         shiny::textInput(ns("x_label"), "X-Achsenlabel", value = "Partition"),
         shiny::textInput(ns("y_label"), "Y-Achsenlabel", value = "RFU"),
         shiny::numericInput(ns("x_size"), "Schriftgröße X", value = 12, min = 8, max = 24, step = 1),
-        shiny::numericInput(ns("y_size"), "Schriftgröße Y", value = 12, min = 8, max = 24, step = 1)
+        shiny::numericInput(ns("y_size"), "Schriftgröße Y", value = 12, min = 8, max = 24, step = 1),
+        shiny::numericInput(
+          ns("max_interactive_points"),
+          "Max. Punkte (Interaktiver Plot)",
+          value = 60000,
+          min = 10000,
+          max = 1000000,
+          step = 10000
+        ),
+        shiny::checkboxInput(
+          ns("use_webgl"),
+          "WebGL für Interaktiven Plot nutzen",
+          value = PLOTLY_USE_WEBGL_DEFAULT
+        ),
+        shiny::helpText("Große Datensätze werden für den interaktiven Plot automatisch reduziert (Downsampling).")
       ),
       shinydashboard::box(
         width = 9,
         title = "Scatterplot",
         status = "primary",
         solidHeader = TRUE,
+        shiny::uiOutput(ns("plotly_sampling_info")),
         shiny::tabsetPanel(
-          shiny::tabPanel("ggplot", shiny::plotOutput(ns("scatter_plot"), height = "520px")),
-          shiny::tabPanel("plotly", plotly::plotlyOutput(ns("scatter_plotly"), height = "520px"))
+          shiny::tabPanel("Plot", shiny::plotOutput(ns("scatter_plot"), height = "520px")),
+          shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("scatter_plotly"), height = "520px"))
         )
+      )
+    ),
+    shiny::fluidRow(
+      shinydashboard::box(
+        width = 12,
+        title = "Plattendaten (Tabelle)",
+        status = "primary",
+        solidHeader = TRUE,
+        collapsible = TRUE,
+        collapsed = TRUE,
+        DT::DTOutput(ns("overview_table"))
       )
     )
   )
@@ -128,9 +147,8 @@ mod_overview_server <- function(id, state) {
       )
     })
 
-    scatter_plot_reactive <- shiny::reactive({
-      df <- filtered_data()
-      settings <- list(
+    scatter_settings <- shiny::reactive({
+      list(
         title = input$plot_title,
         subtitle = input$plot_subtitle,
         x_col = input$x_col,
@@ -142,8 +160,48 @@ mod_overview_server <- function(id, state) {
         color_by = input$color_by,
         alpha = 0.55
       )
+    })
 
-      build_scatter_plot(df, settings)
+    scatter_plot_reactive <- shiny::reactive({
+      build_scatter_plot(filtered_data(), scatter_settings())
+    })
+
+    interactive_scatter_context <- shiny::reactive({
+      sampled <- prepare_interactive_plot_data(
+        filtered_data(),
+        max_points = input$max_interactive_points
+      )
+
+      list(
+        plot = build_scatter_plot(sampled$data, scatter_settings()),
+        sampled = sampled$sampled,
+        original_n = sampled$original_n,
+        used_n = sampled$used_n
+      )
+    })
+
+    output$plotly_sampling_info <- shiny::renderUI({
+      info <- interactive_scatter_context()
+
+      if (!isTRUE(info$sampled)) {
+        return(NULL)
+      }
+
+      mode_label <- if (isTRUE(input$use_webgl)) {
+        "Downsampling + WebGL"
+      } else {
+        "Downsampling (ohne WebGL)"
+      }
+
+      shiny::tags$div(
+        class = "alert alert-info",
+        sprintf(
+          "Interaktiver Plot optimiert: %s von %s Punkten dargestellt (%s).",
+          format(info$used_n, big.mark = ".", scientific = FALSE),
+          format(info$original_n, big.mark = ".", scientific = FALSE),
+          mode_label
+        )
+      )
     })
 
     output$scatter_plot <- shiny::renderPlot({
@@ -151,7 +209,8 @@ mod_overview_server <- function(id, state) {
     }, res = 96)
 
     output$scatter_plotly <- plotly::renderPlotly({
-      plotly::ggplotly(scatter_plot_reactive(), tooltip = "text")
+      info <- interactive_scatter_context()
+      make_interactive_plot(info$plot, tooltip = "text", use_webgl = isTRUE(input$use_webgl))
     })
   })
 }

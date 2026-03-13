@@ -25,11 +25,16 @@ detect_device_type <- function(file_path, header_preview = NULL) {
 
   header_parts <- trimws(strsplit(tolower(header_line), ",", fixed = TRUE)[[1]])
 
-  qia_signature <- c("plate name", "plate id", "plate type", "well", "sample", "channel")
-  has_qia_signature <- all(qia_signature %in% header_parts)
+  qia_base_signature <- c("plate name", "plate id", "plate type", "well", "sample")
+  has_qia_base_signature <- all(qia_base_signature %in% header_parts)
+  has_qia_channel_layout <- all(c("channel", "partition", "rfu") %in% header_parts)
+  has_qia_ref_layout <- all(c("ref", "partition", "rfu") %in% header_parts)
   has_sep_marker <- any(grepl("^sep=,", tolower(header_preview)))
 
-  if (has_qia_signature || (has_sep_marker && length(header_parts) >= 13)) {
+  if (
+    (has_qia_base_signature && (has_qia_channel_layout || has_qia_ref_layout)) ||
+      (has_sep_marker && has_qia_base_signature && length(header_parts) >= 12)
+  ) {
     return("qiaquity")
   }
 
