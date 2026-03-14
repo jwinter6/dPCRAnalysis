@@ -13,6 +13,14 @@ mod_quality_ui <- function(id) {
         shiny::numericInput(ns("min_accepted"), "Minimum akzeptierte Partitionen (n)", value = 10000, min = 1000, step = 500),
         shiny::numericInput(ns("rain_limit_percent"), "Rain-Grenzwert (%)", value = 2.5, min = 0, max = 100, step = 0.1),
         shiny::numericInput(ns("rain_band_percent"), "Rain-Band um Threshold (%)", value = 10, min = 1, max = 50, step = 1),
+        shiny::sliderInput(
+          ns("scatter_alpha"),
+          "Alpha-Wert Punkte (Scatter)",
+          min = 0.05,
+          max = 1,
+          value = SCATTER_ALPHA_DEFAULT,
+          step = 0.05
+        ),
         shiny::sliderInput(ns("conf_level"), "Konfidenzniveau", min = 0.80, max = 0.99, value = 0.95, step = 0.01),
         shiny::uiOutput(ns("dpcr_density_info"))
       ),
@@ -393,7 +401,7 @@ mod_quality_server <- function(id, state) {
           x_text_size = input$q1_x_size,
           y_text_size = input$q1_y_size,
           color_by = "channel",
-          alpha = 0.55
+          alpha = input$scatter_alpha
         )
       )
     })

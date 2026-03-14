@@ -31,6 +31,14 @@ mod_overview_ui <- function(id) {
         shiny::textInput(ns("y_label"), "Y-Achsenlabel", value = "RFU"),
         shiny::numericInput(ns("x_size"), "Schriftgröße X", value = 12, min = 8, max = 24, step = 1),
         shiny::numericInput(ns("y_size"), "Schriftgröße Y", value = 12, min = 8, max = 24, step = 1),
+        shiny::sliderInput(
+          ns("scatter_alpha"),
+          "Alpha-Wert Punkte",
+          min = 0.05,
+          max = 1,
+          value = SCATTER_ALPHA_DEFAULT,
+          step = 0.05
+        ),
         shiny::numericInput(
           ns("max_interactive_points"),
           "Max. Punkte (Interaktiver Plot)",
@@ -158,7 +166,7 @@ mod_overview_server <- function(id, state) {
         x_text_size = input$x_size,
         y_text_size = input$y_size,
         color_by = input$color_by,
-        alpha = 0.55
+        alpha = input$scatter_alpha
       )
     })
 

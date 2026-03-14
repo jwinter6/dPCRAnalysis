@@ -56,6 +56,12 @@ DPCR_NUMERIC_COLUMNS <- c("volume", "threshold", "partition", "rfu")
 DPCR_LOGICAL_COLUMNS <- c("invalid_partition", "positive_control")
 DPCR_PLOT_NUMERIC_CANDIDATES <- c("partition", "rfu", "volume", "threshold")
 PLOTLY_USE_WEBGL_DEFAULT <- FALSE
+SCATTER_ALPHA_DEFAULT <- 0.3
+TWODDPCR_DROPLET_VOLUME_DEFAULT <- 0.85
+TWODDPCR_MAHALANOBIS_MAX_DEFAULT <- 30
+TWODDPCR_SD_ERROR_DEFAULT <- 5
+TWODDPCR_KNN_K_DEFAULT <- 3
+TWODDPCR_KNN_PROB_DEFAULT <- 0
 
 empty_issues_table <- function() {
   tibble::tibble(

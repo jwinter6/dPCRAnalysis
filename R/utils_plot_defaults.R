@@ -9,7 +9,7 @@ get_default_scatter_settings <- function() {
     x_text_size = 12,
     y_text_size = 12,
     color_by = "channel",
-    alpha = 0.6
+    alpha = SCATTER_ALPHA_DEFAULT
   )
 }
 
