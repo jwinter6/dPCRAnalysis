@@ -1,10 +1,17 @@
-save_analysis_rdata <- function(path, dpcr_data, validation_report, metadata = list()) {
+save_analysis_rdata <- function(path,
+                                dpcr_data,
+                                validation_report,
+                                metadata = list(),
+                                app_settings = get_default_app_settings(),
+                                custom_palettes = list()) {
   dpcr_data <- coerce_dpcr_schema(dpcr_data)
   validation_report <- tibble::as_tibble(validation_report)
   saved_at <- Sys.time()
   app_version <- APP_VERSION
+  app_settings <- sanitize_app_settings(app_settings, custom_palettes)
+  custom_palettes <- sanitize_custom_palettes(custom_palettes)
 
-  save(dpcr_data, validation_report, metadata, saved_at, app_version, file = path)
+  save(dpcr_data, validation_report, metadata, app_settings, custom_palettes, saved_at, app_version, file = path)
   invisible(path)
 }
 
@@ -24,6 +31,16 @@ load_analysis_rdata <- function(path) {
       empty_issues_table()
     },
     metadata = if ("metadata" %in% loaded_names) env$metadata else list(),
+    app_settings = if ("app_settings" %in% loaded_names) {
+      sanitize_app_settings(env$app_settings, if ("custom_palettes" %in% loaded_names) env$custom_palettes else list())
+    } else {
+      get_default_app_settings()
+    },
+    custom_palettes = if ("custom_palettes" %in% loaded_names) {
+      sanitize_custom_palettes(env$custom_palettes)
+    } else {
+      list()
+    },
     saved_at = if ("saved_at" %in% loaded_names) env$saved_at else NULL,
     app_version = if ("app_version" %in% loaded_names) env$app_version else NA_character_
   )

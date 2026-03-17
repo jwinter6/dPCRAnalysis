@@ -14,6 +14,7 @@ app_ui <- function() {
         shinydashboard::menuItem("Detailanalyse Sample", tabName = "sample_detail", icon = shiny::icon("magnifying-glass-chart")),
         shinydashboard::menuItem("Report", tabName = "report", icon = shiny::icon("file-lines")),
         shinydashboard::menuItem("Export/Import", tabName = "export_import", icon = shiny::icon("right-left")),
+        shinydashboard::menuItem("Einstellungen", tabName = "settings", icon = shiny::icon("sliders")),
         shinydashboard::menuItem("Hilfe", tabName = "help", icon = shiny::icon("circle-question"))
       )
     ),
@@ -30,6 +31,7 @@ app_ui <- function() {
         shinydashboard::tabItem(tabName = "sample_detail", mod_sample_detail_ui("sample_detail")),
         shinydashboard::tabItem(tabName = "report", mod_report_ui("report")),
         shinydashboard::tabItem(tabName = "export_import", mod_export_import_ui("export_import")),
+        shinydashboard::tabItem(tabName = "settings", mod_settings_ui("settings")),
         shinydashboard::tabItem(tabName = "help", mod_help_ui("help"))
       )
     )

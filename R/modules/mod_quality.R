@@ -62,7 +62,7 @@ mod_quality_ui <- function(id) {
         status = "primary",
         solidHeader = TRUE,
         shiny::tabsetPanel(
-          shiny::tabPanel("Plot", shiny::plotOutput(ns("q1_plot"), height = "420px")),
+          shiny::tabPanel("Plot", plot_output_with_download(ns, "q1_plot", height = "420px")),
           shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("q1_plotly"), height = "420px"))
         )
       )
@@ -89,7 +89,7 @@ mod_quality_ui <- function(id) {
         status = "primary",
         solidHeader = TRUE,
         shiny::tabsetPanel(
-          shiny::tabPanel("Plot", shiny::plotOutput(ns("q2_plot"), height = "420px")),
+          shiny::tabPanel("Plot", plot_output_with_download(ns, "q2_plot", height = "420px")),
           shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("q2_plotly"), height = "420px"))
         )
       )
@@ -133,7 +133,7 @@ mod_quality_ui <- function(id) {
         status = "primary",
         solidHeader = TRUE,
         shiny::tabsetPanel(
-          shiny::tabPanel("Plot", shiny::plotOutput(ns("q3_density_plot"), height = "420px")),
+          shiny::tabPanel("Plot", plot_output_with_download(ns, "q3_density_plot", height = "420px")),
           shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("q3_density_plotly"), height = "420px"))
         ),
         shiny::br(),
@@ -147,7 +147,7 @@ mod_quality_ui <- function(id) {
         status = "primary",
         solidHeader = TRUE,
         shiny::tabsetPanel(
-          shiny::tabPanel("Plot", shiny::plotOutput(ns("q3_ci_plot"), height = "520px")),
+          shiny::tabPanel("Plot", plot_output_with_download(ns, "q3_ci_plot", height = "520px")),
           shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("q3_ci_plotly"), height = "520px"))
         )
       )
@@ -157,6 +157,13 @@ mod_quality_ui <- function(id) {
 
 mod_quality_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
+    plot_settings <- shiny::reactive({
+      list(
+        app_settings = sanitize_app_settings(state$app_settings, state$custom_palettes),
+        custom_palettes = sanitize_custom_palettes(state$custom_palettes)
+      )
+    })
+
     empty_plotly_message <- function(msg) {
       plotly::plot_ly(type = "scatter", mode = "markers", x = c(0), y = c(0), marker = list(opacity = 0)) |>
         plotly::layout(
@@ -402,7 +409,9 @@ mod_quality_server <- function(id, state) {
           y_text_size = input$q1_y_size,
           color_by = "channel",
           alpha = input$scatter_alpha
-        )
+        ),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -427,7 +436,9 @@ mod_quality_server <- function(id, state) {
           x_text_size = input$q2_x_size,
           y_text_size = input$q2_y_size,
           bins = input$q2_bins
-        )
+        ),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -471,7 +482,9 @@ mod_quality_server <- function(id, state) {
           conf_level = input$conf_level,
           bars = input$q3_density_bars,
           title = input$q3_density_title,
-          subtitle = sub
+          subtitle = sub,
+          app_settings = plot_settings()$app_settings,
+          custom_palettes = plot_settings()$custom_palettes
         ),
         error = function(e) {
           build_empty_plot(paste("dpcR-Fehler:", e$message))
@@ -583,7 +596,9 @@ mod_quality_server <- function(id, state) {
         quality_metrics(),
         metric = input$q3_metric,
         title = "Konfidenzintervalle je Well/Kanal",
-        subtitle = sprintf("Konfidenzniveau: %.0f%%", 100 * input$conf_level)
+        subtitle = sprintf("Konfidenzniveau: %.0f%%", 100 * input$conf_level),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -594,5 +609,64 @@ mod_quality_server <- function(id, state) {
     output$q3_ci_plotly <- plotly::renderPlotly({
       make_interactive_plot(q3_ci_plot(), tooltip = "text", use_webgl = FALSE)
     })
+
+    register_plot_download(
+      output = output,
+      output_id = "q1_plot_download",
+      plot_fn = function() q1_plot(),
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "quality_q1_scatter"
+    )
+
+    register_plot_download(
+      output = output,
+      output_id = "q2_plot_download",
+      plot_fn = function() q2_plot(),
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "quality_q2_histogram"
+    )
+
+    register_plot_download(
+      output = output,
+      output_id = "q3_density_plot_download",
+      plot_fn = function() {
+        row <- selected_density_row()
+
+        if (nrow(row) == 0 || row$n_accepted[[1]] <= 0 || !is_dpcr_density_available()) {
+          return(build_empty_plot("Keine Daten für dpcR-Dichteplot verfügbar"))
+        }
+
+        build_dpcr_density_plot(
+          k = row$n_positive[[1]],
+          n = row$n_accepted[[1]],
+          average = density_average(),
+          method = input$q3_density_method,
+          conf_level = input$conf_level,
+          bars = input$q3_density_bars,
+          title = input$q3_density_title,
+          subtitle = sprintf(
+            "%s | Well: %s | Sample: %s | Kanal: %s | n=%s, k=%s",
+            input$q3_density_subtitle,
+            row$well[[1]],
+            row$sample[[1]],
+            row$channel[[1]],
+            row$n_accepted[[1]],
+            row$n_positive[[1]]
+          ),
+          app_settings = plot_settings()$app_settings,
+          custom_palettes = plot_settings()$custom_palettes
+        )
+      },
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "quality_q3_density"
+    )
+
+    register_plot_download(
+      output = output,
+      output_id = "q3_ci_plot_download",
+      plot_fn = function() q3_ci_plot(),
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "quality_q3_confidence_intervals"
+    )
   })
 }

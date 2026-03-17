@@ -45,7 +45,7 @@ mod_sample_analysis_ui <- function(id) {
           shiny::selectInput(
             ns("plot_a_color_by"),
             "Farbe nach",
-            choices = c("sample", "well", "channel", "threshold_status", "none"),
+            choices = sample_analysis_color_choices(new_empty_dpcr_data(), plot = "a"),
             selected = "sample"
           ),
           shiny::textInput(ns("plot_a_title"), "Titel", value = "Sample vs Fluoreszenz"),
@@ -81,7 +81,7 @@ mod_sample_analysis_ui <- function(id) {
           solidHeader = TRUE,
           shiny::uiOutput(ns("plot_a_sampling_info")),
           shiny::tabsetPanel(
-            shiny::tabPanel("Plot", shiny::plotOutput(ns("plot_a_plot"), height = "460px")),
+            shiny::tabPanel("Plot", plot_output_with_download(ns, "plot_a_plot", height = "460px")),
             shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("plot_a_plotly"), height = "460px"))
           )
         )
@@ -121,7 +121,7 @@ mod_sample_analysis_ui <- function(id) {
           shiny::selectInput(
             ns("plot_b_color_by"),
             "Farbe nach",
-            choices = c("sample", "well", "plate_name", "none"),
+            choices = sample_analysis_color_choices(new_empty_dpcr_data(), plot = "b"),
             selected = "sample"
           ),
           shiny::textInput(ns("plot_b_title"), "Titel", value = "Kanal vs Kanal"),
@@ -158,7 +158,7 @@ mod_sample_analysis_ui <- function(id) {
           solidHeader = TRUE,
           shiny::uiOutput(ns("plot_b_sampling_info")),
           shiny::tabsetPanel(
-            shiny::tabPanel("Plot", shiny::plotOutput(ns("plot_b_plot"), height = "460px")),
+            shiny::tabPanel("Plot", plot_output_with_download(ns, "plot_b_plot", height = "460px")),
             shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("plot_b_plotly"), height = "460px"))
           )
         )
@@ -183,6 +183,12 @@ mod_sample_analysis_ui <- function(id) {
 mod_sample_analysis_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    plot_settings <- shiny::reactive({
+      list(
+        app_settings = sanitize_app_settings(state$app_settings, state$custom_palettes),
+        custom_palettes = sanitize_custom_palettes(state$custom_palettes)
+      )
+    })
 
     preserve_single_value <- function(current, choices, default = NULL) {
       values <- as.character(unname(choices))
@@ -240,6 +246,8 @@ mod_sample_analysis_server <- function(id, state) {
       plot_a_samples_selected = character(),
       plot_a_channel_choices = NULL,
       plot_a_channel_selected = character(),
+      plot_a_color_by_choices = NULL,
+      plot_a_color_by_selected = character(),
       plot_a_x_choices = NULL,
       plot_a_x_selected = character(),
       plot_a_y_choices = NULL,
@@ -250,6 +258,8 @@ mod_sample_analysis_server <- function(id, state) {
       plot_b_channel_x_selected = character(),
       plot_b_channel_y_choices = NULL,
       plot_b_channel_y_selected = character(),
+      plot_b_color_by_choices = NULL,
+      plot_b_color_by_selected = character(),
       plot_b_auto_x_label = default_channel_axis_label(character(), axis_fallback = "X"),
       plot_b_auto_y_label = default_channel_axis_label(character(), axis_fallback = "Y")
     )
@@ -319,6 +329,14 @@ mod_sample_analysis_server <- function(id, state) {
       sample_analysis_axis_choices(base_data(), include_categorical = FALSE)
     })
 
+    plot_a_color_choices <- shiny::reactive({
+      sample_analysis_color_choices(base_data(), plot = "a")
+    })
+
+    plot_b_color_choices <- shiny::reactive({
+      sample_analysis_color_choices(base_data(), plot = "b")
+    })
+
     shiny::observeEvent(sample_choices(), {
       samples <- sample_choices()
       selected <- preserve_multi_value(isolate(input$plot_a_samples), samples)
@@ -357,6 +375,18 @@ mod_sample_analysis_server <- function(id, state) {
         selected = selected,
         choice_key = "plot_a_channel_choices",
         selected_key = "plot_a_channel_selected"
+      )
+    }, ignoreInit = FALSE)
+
+    shiny::observeEvent(plot_a_color_choices(), {
+      choices <- plot_a_color_choices()
+
+      update_select_if_needed(
+        input_id = "plot_a_color_by",
+        choices = choices,
+        selected = preserve_single_value(isolate(input$plot_a_color_by), choices, default = "sample"),
+        choice_key = "plot_a_color_by_choices",
+        selected_key = "plot_a_color_by_selected"
       )
     }, ignoreInit = FALSE)
 
@@ -400,6 +430,18 @@ mod_sample_analysis_server <- function(id, state) {
         selected = preserve_single_value(isolate(input$plot_b_channel_y), channels, default = channel_y_default),
         choice_key = "plot_b_channel_y_choices",
         selected_key = "plot_b_channel_y_selected"
+      )
+    }, ignoreInit = FALSE)
+
+    shiny::observeEvent(plot_b_color_choices(), {
+      choices <- plot_b_color_choices()
+
+      update_select_if_needed(
+        input_id = "plot_b_color_by",
+        choices = choices,
+        selected = preserve_single_value(isolate(input$plot_b_color_by), choices, default = "sample"),
+        choice_key = "plot_b_color_by_choices",
+        selected_key = "plot_b_color_by_selected"
       )
     }, ignoreInit = FALSE)
 
@@ -484,7 +526,9 @@ mod_sample_analysis_server <- function(id, state) {
           threshold_enabled = input$plot_a_threshold_enabled,
           threshold_y = plot_a_threshold_value(),
           threshold_x = NULL
-        )
+        ),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -506,7 +550,9 @@ mod_sample_analysis_server <- function(id, state) {
           threshold_enabled = input$plot_a_threshold_enabled,
           threshold_y = plot_a_threshold_value(),
           threshold_x = NULL
-        )
+        ),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -639,7 +685,9 @@ mod_sample_analysis_server <- function(id, state) {
           threshold_enabled = input$plot_b_threshold_enabled,
           threshold_y = plot_b_threshold_y(),
           threshold_x = plot_b_threshold_x()
-        )
+        ),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -661,7 +709,9 @@ mod_sample_analysis_server <- function(id, state) {
           threshold_enabled = input$plot_b_threshold_enabled,
           threshold_y = plot_b_threshold_y(),
           threshold_x = plot_b_threshold_x()
-        )
+        ),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -724,5 +774,34 @@ mod_sample_analysis_server <- function(id, state) {
       shiny::updateNumericInput(session, "plot_b_threshold_y", value = round(threshold_y, 3))
       shiny::showNotification("Thresholds fuer Plot B aktualisiert.", type = "message")
     })
+
+    register_plot_download(
+      output = output,
+      output_id = "plot_a_plot_download",
+      plot_fn = function() plot_a_static_plot(),
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "sample_analysis_plot_a"
+    )
+
+    register_plot_download(
+      output = output,
+      output_id = "plot_b_plot_download",
+      plot_fn = function() {
+        if (identical(input$plot_b_channel_x, input$plot_b_channel_y)) {
+          return(build_empty_plot("Bitte zwei unterschiedliche Kanaele fuer Plot B waehlen."))
+        }
+
+        plot_b_static_plot()
+      },
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "sample_analysis_plot_b"
+    )
+
+    invisible(list(
+      plot_a_color_choices = plot_a_color_choices,
+      plot_b_color_choices = plot_b_color_choices,
+      plot_a_static_plot = plot_a_static_plot,
+      plot_b_static_plot = plot_b_static_plot
+    ))
   })
 }

@@ -71,8 +71,33 @@
   border-radius: 6px;
 }
 
+.plot-download-container {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.palette-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.palette-swatch {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(28, 37, 48, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
 @media (max-width: 992px) {
   .box {
     margin-bottom: 16px;
+  }
+
+  .plot-download-container {
+    text-align: left;
   }
 }

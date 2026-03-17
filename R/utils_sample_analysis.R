@@ -21,6 +21,46 @@ sample_analysis_axis_choices <- function(df, include_categorical = TRUE) {
   choices
 }
 
+sample_analysis_has_multiple_source_files <- function(df) {
+  source_col <- find_source_file_column(df)
+
+  if (is.null(source_col) || !source_col %in% names(df)) {
+    return(FALSE)
+  }
+
+  source_values <- trimws(as.character(df[[source_col]]))
+  source_values <- unique(source_values[!is.na(source_values) & nzchar(source_values)])
+
+  length(source_values) > 1
+}
+
+sample_analysis_color_choices <- function(df, plot = c("a", "b")) {
+  plot <- match.arg(plot)
+
+  choices <- if (identical(plot, "a")) {
+    c(
+      "Sample" = "sample",
+      "Well" = "well",
+      "Kanal" = "channel",
+      "Threshold-Status" = "threshold_status",
+      "Keine" = "none"
+    )
+  } else {
+    c(
+      "Sample" = "sample",
+      "Well" = "well",
+      "Platte" = "plate_name",
+      "Keine" = "none"
+    )
+  }
+
+  if (sample_analysis_has_multiple_source_files(df)) {
+    choices <- c(utils::head(choices, -1), "Dateiname" = "source_file", "Keine" = "none")
+  }
+
+  choices
+}
+
 sample_analysis_prepare_data <- function(df) {
   df <- coerce_dpcr_schema(df)
 
@@ -121,7 +161,10 @@ compute_auto_threshold <- function(values) {
   compute_kmeans_threshold(values)
 }
 
-build_sample_analysis_scatter_plot <- function(df, settings) {
+build_sample_analysis_scatter_plot <- function(df,
+                                               settings,
+                                               app_settings = get_default_app_settings(),
+                                               custom_palettes = list()) {
   if (is.null(df) || !is.data.frame(df) || nrow(df) == 0) {
     return(build_empty_plot("Keine Daten verfuegbar"))
   }
@@ -201,10 +244,6 @@ build_sample_analysis_scatter_plot <- function(df, settings) {
       legend.position = "bottom"
     )
 
-  if (!is.null(color_by) && color_by %in% names(plot_df) && color_by != "none") {
-    p <- p + ggplot2::scale_color_brewer(palette = "Dark2")
-  }
-
   if (isTRUE(settings$threshold_enabled) &&
       !is.null(settings$threshold_y) &&
       is.finite(settings$threshold_y) &&
@@ -229,7 +268,7 @@ build_sample_analysis_scatter_plot <- function(df, settings) {
     )
   }
 
-  p
+  apply_app_discrete_scales(p, app_settings = app_settings, custom_palettes = custom_palettes)
 }
 
 build_plot_a_data <- function(df, samples = NULL, channel = NULL) {
@@ -286,7 +325,8 @@ build_plot_b_data <- function(df, channel_x, channel_y, samples = NULL) {
     return(tibble::tibble())
   }
 
-  key_cols <- c("plate_name", "plate_id", "plate_type", "well", "sample", "partition")
+  key_cols <- c("plate_name", "plate_id", "plate_type", "well", "sample", "partition", "source_file")
+  key_cols <- key_cols[key_cols %in% names(data)]
 
   data_x <- data |>
     dplyr::filter(channel == channel_x) |>

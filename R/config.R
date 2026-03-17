@@ -1,5 +1,6 @@
 APP_NAME <- "dPCR Analyseplattform"
 APP_VERSION <- "0.1.0"
+APP_DEFAULT_PALETTE_ID <- "ggplot_default"
 
 DEVICE_LEVELS <- c("qiaquity", "roche", "biorad", "unknown")
 
@@ -57,6 +58,11 @@ DPCR_LOGICAL_COLUMNS <- c("invalid_partition", "positive_control")
 DPCR_PLOT_NUMERIC_CANDIDATES <- c("partition", "rfu", "volume", "threshold")
 PLOTLY_USE_WEBGL_DEFAULT <- FALSE
 SCATTER_ALPHA_DEFAULT <- 0.3
+PLOT_EXPORT_WIDTH_DEFAULT <- 5
+PLOT_EXPORT_HEIGHT_DEFAULT <- 5
+PLOT_EXPORT_DPI_DEFAULT <- 96
+PLOT_EXPORT_FORMAT_DEFAULT <- "png"
+PLOT_EXPORT_FORMATS <- c("png", "pdf", "jpeg")
 TWODDPCR_DROPLET_VOLUME_DEFAULT <- 0.85
 TWODDPCR_MAHALANOBIS_MAX_DEFAULT <- 30
 TWODDPCR_SD_ERROR_DEFAULT <- 5

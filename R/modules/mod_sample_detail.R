@@ -131,7 +131,7 @@ mod_sample_detail_ui <- function(id) {
           shiny::column(
             width = 9,
             shiny::tabsetPanel(
-              shiny::tabPanel("Plot", shiny::plotOutput(ns("classify_plot"), height = "520px")),
+              shiny::tabPanel("Plot", plot_output_with_download(ns, "classify_plot", height = "520px")),
               shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("classify_plotly"), height = "520px"))
             )
           )
@@ -175,7 +175,7 @@ mod_sample_detail_ui <- function(id) {
           shiny::column(
             width = 9,
             shiny::tabsetPanel(
-              shiny::tabPanel("Plot", shiny::plotOutput(ns("results_plot"), height = "520px")),
+              shiny::tabPanel("Plot", plot_output_with_download(ns, "results_plot", height = "520px")),
               shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("results_plotly"), height = "520px"))
             )
           )
@@ -210,6 +210,12 @@ mod_sample_detail_ui <- function(id) {
 mod_sample_detail_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    plot_settings <- shiny::reactive({
+      list(
+        app_settings = sanitize_app_settings(state$app_settings, state$custom_palettes),
+        custom_palettes = sanitize_custom_palettes(state$custom_palettes)
+      )
+    })
 
     preserve_single_value <- function(current, choices, default = NULL) {
       values <- as.character(unname(choices))
@@ -810,7 +816,9 @@ mod_sample_detail_server <- function(id, state) {
         method = input$classify_mode,
         ch1_threshold = input$detail_ch1_threshold,
         ch2_threshold = input$detail_ch2_threshold,
-        grid_thresholds = get_grid_threshold_inputs()
+        grid_thresholds = get_grid_threshold_inputs(),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -845,7 +853,9 @@ mod_sample_detail_server <- function(id, state) {
         ch1_threshold = input$detail_ch1_threshold,
         ch2_threshold = input$detail_ch2_threshold,
         show_final_centres = isTRUE(input$show_final_centres),
-        grid_thresholds = get_grid_threshold_inputs()
+        grid_thresholds = get_grid_threshold_inputs(),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
       )
     })
 
@@ -1031,6 +1041,22 @@ mod_sample_detail_server <- function(id, state) {
       }
     )
 
+    register_plot_download(
+      output = output,
+      output_id = "classify_plot_download",
+      plot_fn = function() classify_plot(),
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "sample_detail_classify_plot"
+    )
+
+    register_plot_download(
+      output = output,
+      output_id = "results_plot_download",
+      plot_fn = function() results_plot(),
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "sample_detail_results_plot"
+    )
+
     invisible(list(
       adapter = adapter,
       build_detail_adapter = build_detail_adapter,
@@ -1038,6 +1064,8 @@ mod_sample_detail_server <- function(id, state) {
       run_classification_internal = run_classification_internal,
       apply_rain_internal = apply_rain_internal,
       current_analysis_plate = current_analysis_plate,
+      classify_plot = classify_plot,
+      results_plot = results_plot,
       results_table_data = results_table_data,
       summary_table_data = summary_table_data
     ))

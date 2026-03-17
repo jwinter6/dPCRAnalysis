@@ -95,3 +95,71 @@ test_that("plot B utilities join channels and compute quadrant counts", {
   expect_equal(table_df$quadrant_x_pos_y_pos[[1]], 1)
   expect_equal(table_df$quadrant_x_neg_y_neg[[1]], 1)
 })
+
+test_that("sample analysis color choices expose filename only for multiple files", {
+  one_file_df <- tibble::tibble(
+    sample = c("Sample_1", "Sample_2"),
+    well = c("A1", "A2"),
+    channel = c("C", "C"),
+    source_file = c("one.csv", "one.csv")
+  )
+
+  multi_file_df <- tibble::tibble(
+    sample = c("Sample_1", "Sample_2"),
+    well = c("A1", "A2"),
+    channel = c("C", "C"),
+    source_file = c("one.csv", "two.csv")
+  )
+
+  expect_false("source_file" %in% unname(sample_analysis_color_choices(one_file_df, plot = "a")))
+  expect_true("source_file" %in% unname(sample_analysis_color_choices(multi_file_df, plot = "a")))
+  expect_true("source_file" %in% unname(sample_analysis_color_choices(multi_file_df, plot = "b")))
+})
+
+test_that("sample analysis plot maps colors by filename with the active palette", {
+  df <- tibble::tibble(
+    plate_name = rep("Plate_1", 4),
+    plate_id = rep("id-1", 4),
+    plate_type = rep("Nanoplate", 4),
+    well = c("A1", "A1", "A2", "A2"),
+    sample = c("Sample_1", "Sample_1", "Sample_2", "Sample_2"),
+    channel = c("C", "C", "C", "C"),
+    color_channel = rep("green", 4),
+    volume = rep(24, 4),
+    threshold = rep(100, 4),
+    partition = c(1, 2, 1, 2),
+    rfu = c(120, 140, 80, 95),
+    invalid_partition = rep(FALSE, 4),
+    positive_control = c(TRUE, TRUE, FALSE, FALSE),
+    reference = rep("Std-Ref", 4),
+    device_type = factor(rep("qiaquity", 4), levels = DEVICE_LEVELS),
+    source_file = c("file_a.csv", "file_a.csv", "file_b.csv", "file_b.csv")
+  )
+
+  custom_palettes <- list(Testpalette = c("#112233", "#445566"))
+  plot_obj <- build_sample_analysis_scatter_plot(
+    df,
+    settings = list(
+      title = "Dateiname",
+      subtitle = "Vergleich",
+      x_col = "partition",
+      y_col = "rfu",
+      x_label = "Partition",
+      y_label = "RFU",
+      x_text_size = 12,
+      y_text_size = 12,
+      color_by = "source_file",
+      alpha = 0.4,
+      threshold_enabled = FALSE,
+      threshold_y = NULL,
+      threshold_x = NULL
+    ),
+    app_settings = list(palette_id = custom_palette_id("Testpalette"), export = get_default_export_settings()),
+    custom_palettes = custom_palettes
+  )
+
+  built <- ggplot2::ggplot_build(plot_obj)
+
+  expect_equal(rlang::as_label(plot_obj$mapping$colour), "source_file")
+  expect_setequal(unique(built$data[[1]]$colour), c("#112233", "#445566"))
+})

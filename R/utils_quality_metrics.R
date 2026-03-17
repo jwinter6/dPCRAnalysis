@@ -219,7 +219,9 @@ build_dpcr_density_plot <- function(
     conf_level = 0.95,
     bars = FALSE,
     title = "dpcR-Dichteplot",
-    subtitle = NULL) {
+    subtitle = NULL,
+    app_settings = get_default_app_settings(),
+    custom_palettes = list()) {
   if (!is_dpcr_density_available()) {
     return(build_empty_plot("dpcR ist nicht verfügbar"))
   }
@@ -244,21 +246,22 @@ build_dpcr_density_plot <- function(
 
   x_lab <- if (isTRUE(average)) "Moleküle pro Partition (λ)" else "Positive Partitionen"
   sub_txt <- if (!is.null(subtitle)) subtitle else sprintf("Methode: %s | %.0f%% CI", ci_df$method[[1]], 100 * conf_level)
+  accent <- get_palette_accent_colors(app_settings, custom_palettes, n = 4)
 
   p <- ggplot2::ggplot(dens, ggplot2::aes(x = x, y = density)) +
-    ggplot2::geom_area(fill = "#9ecae1", alpha = 0.45) +
-    ggplot2::geom_line(color = "#24527a", linewidth = 0.9) +
+    ggplot2::geom_area(fill = grDevices::adjustcolor(accent[[1]], alpha.f = 0.45), alpha = 0.9) +
+    ggplot2::geom_line(color = accent[[2]], linewidth = 0.9) +
     ggplot2::geom_rect(
       inherit.aes = FALSE,
       data = ci_df,
       ggplot2::aes(xmin = lower, xmax = upper, ymin = -Inf, ymax = Inf),
-      fill = "#2b8a3e",
+      fill = grDevices::adjustcolor(accent[[3]], alpha.f = 0.14),
       alpha = 0.14
     ) +
     ggplot2::geom_vline(
       data = ci_df,
       ggplot2::aes(xintercept = estimate),
-      color = "#2b8a3e",
+      color = accent[[4]],
       linewidth = 1.0
     ) +
     ggplot2::labs(
@@ -292,7 +295,9 @@ build_lambda_density_plot <- function(
     metric = c("lambda", "positive_fraction"),
     group_by = c("channel", "sample", "plate_name"),
     title = "Dichteplot",
-    subtitle = "Verteilung pro Gruppe") {
+    subtitle = "Verteilung pro Gruppe",
+    app_settings = get_default_app_settings(),
+    custom_palettes = list()) {
   metric <- match.arg(metric)
   group_by <- match.arg(group_by)
 
@@ -311,7 +316,7 @@ build_lambda_density_plot <- function(
     return(build_empty_plot("Zu wenige Werte für Dichteplot"))
   }
 
-  ggplot2::ggplot(
+  p <- ggplot2::ggplot(
     plot_df,
     ggplot2::aes(
       x = value,
@@ -339,16 +344,18 @@ build_lambda_density_plot <- function(
       plot.title = ggplot2::element_text(face = "bold"),
       panel.grid.minor = ggplot2::element_blank(),
       legend.position = "bottom"
-    ) +
-    ggplot2::scale_color_brewer(palette = "Dark2") +
-    ggplot2::scale_fill_brewer(palette = "Pastel2")
+    )
+
+  apply_app_discrete_scales(p, app_settings = app_settings, custom_palettes = custom_palettes)
 }
 
 build_lambda_ci_plot <- function(
     metrics,
     metric = c("lambda", "positive_fraction"),
     title = "Konfidenzintervalle",
-    subtitle = "Clopper-Pearson-basiert") {
+    subtitle = "Clopper-Pearson-basiert",
+    app_settings = get_default_app_settings(),
+    custom_palettes = list()) {
   metric <- match.arg(metric)
 
   if (is.null(metrics) || !is.data.frame(metrics) || nrow(metrics) == 0) {
@@ -385,7 +392,7 @@ build_lambda_ci_plot <- function(
   plot_df <- dplyr::arrange(plot_df, dplyr::desc(ci_value))
   plot_df$group_id <- factor(plot_df$group_id, levels = rev(unique(plot_df$group_id)))
 
-  ggplot2::ggplot(
+  p <- ggplot2::ggplot(
     plot_df,
     ggplot2::aes(
       x = group_id,
@@ -417,8 +424,9 @@ build_lambda_ci_plot <- function(
       plot.title = ggplot2::element_text(face = "bold"),
       panel.grid.minor = ggplot2::element_blank(),
       legend.position = "bottom"
-    ) +
-    ggplot2::scale_color_brewer(palette = "Dark2")
+    )
+
+  apply_app_discrete_scales(p, app_settings = app_settings, custom_palettes = custom_palettes)
 }
 
 summarize_qc_flags <- function(metrics, min_accepted = 10000, rain_limit_fraction = 0.025) {

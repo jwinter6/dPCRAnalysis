@@ -31,6 +31,46 @@ derive_color_channel <- function(channel_value) {
   )
 }
 
+find_source_file_column <- function(df) {
+  if (is.null(df) || !is.data.frame(df)) {
+    return(NULL)
+  }
+
+  candidates <- c("source_file", "file_name", "filename", "Dateiname", "dateiname")
+  matches <- intersect(candidates, names(df))
+
+  if (length(matches) == 0) {
+    return(NULL)
+  }
+
+  matches[[1]]
+}
+
+normalize_source_file_column <- function(df) {
+  if (is.null(df) || !is.data.frame(df)) {
+    return(df)
+  }
+
+  source_col <- find_source_file_column(df)
+  if (is.null(source_col)) {
+    return(df)
+  }
+
+  if (!"source_file" %in% names(df)) {
+    df$source_file <- df[[source_col]]
+    return(df)
+  }
+
+  source_values <- trimws(as.character(df$source_file))
+  has_source_values <- any(!is.na(source_values) & nzchar(source_values))
+
+  if (!has_source_values && !identical(source_col, "source_file")) {
+    df$source_file <- df[[source_col]]
+  }
+
+  df
+}
+
 new_empty_dpcr_data <- function() {
   tibble::tibble(
     plate_name = character(),
@@ -68,6 +108,7 @@ coerce_dpcr_schema <- function(df) {
   }
 
   out <- tibble::as_tibble(df)
+  out <- normalize_source_file_column(out)
 
   missing_cols <- setdiff(DPCR_STANDARD_COLUMNS, names(out))
   for (col in missing_cols) {

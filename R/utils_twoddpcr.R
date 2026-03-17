@@ -540,8 +540,11 @@ build_twoddpcr_classify_plot <- function(plate,
                                          method = c("kmeans", "thresholds", "grid", "knn"),
                                          ch1_threshold = NA_real_,
                                          ch2_threshold = NA_real_,
-                                         grid_thresholds = NULL) {
+                                         grid_thresholds = NULL,
+                                         app_settings = get_default_app_settings(),
+                                         custom_palettes = list()) {
   method <- match.arg(method)
+  accent <- get_palette_accent_colors(app_settings, custom_palettes, n = 4)
 
   p <- twoddpcr::heatPlot(
     plate,
@@ -553,22 +556,22 @@ build_twoddpcr_classify_plot <- function(plate,
 
   if (method == "thresholds" && is.finite(ch1_threshold) && is.finite(ch2_threshold)) {
     p <- p +
-      ggplot2::geom_hline(yintercept = ch1_threshold, linewidth = 0.8) +
-      ggplot2::geom_vline(xintercept = ch2_threshold, linewidth = 0.8)
+      ggplot2::geom_hline(yintercept = ch1_threshold, linewidth = 0.8, color = accent[[1]]) +
+      ggplot2::geom_vline(xintercept = ch2_threshold, linewidth = 0.8, color = accent[[2]])
   } else if (method == "grid") {
     rectangles <- build_twoddpcr_grid_rectangles(grid_thresholds)
     p <- p +
       ggplot2::geom_rect(data = rectangles$NN, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-        inherit.aes = FALSE, fill = "green", colour = "green4", alpha = 0.18) +
+        inherit.aes = FALSE, fill = grDevices::adjustcolor(accent[[1]], alpha.f = 0.18), colour = accent[[1]], alpha = 0.18) +
       ggplot2::geom_rect(data = rectangles$NP, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-        inherit.aes = FALSE, fill = "green", colour = "green4", alpha = 0.18) +
+        inherit.aes = FALSE, fill = grDevices::adjustcolor(accent[[2]], alpha.f = 0.18), colour = accent[[2]], alpha = 0.18) +
       ggplot2::geom_rect(data = rectangles$PN, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-        inherit.aes = FALSE, fill = "green", colour = "green4", alpha = 0.18) +
+        inherit.aes = FALSE, fill = grDevices::adjustcolor(accent[[3]], alpha.f = 0.18), colour = accent[[3]], alpha = 0.18) +
       ggplot2::geom_rect(data = rectangles$PP, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-        inherit.aes = FALSE, fill = "green", colour = "green4", alpha = 0.18)
+        inherit.aes = FALSE, fill = grDevices::adjustcolor(accent[[4]], alpha.f = 0.18), colour = accent[[4]], alpha = 0.18)
   }
 
-  p
+  apply_app_discrete_scales(p, app_settings = app_settings, custom_palettes = custom_palettes)
 }
 
 build_twoddpcr_results_plot <- function(plate,
@@ -582,8 +585,11 @@ build_twoddpcr_results_plot <- function(plate,
                                         ch1_threshold = NA_real_,
                                         ch2_threshold = NA_real_,
                                         show_final_centres = FALSE,
-                                        grid_thresholds = NULL) {
+                                        grid_thresholds = NULL,
+                                        app_settings = get_default_app_settings(),
+                                        custom_palettes = list()) {
   labels <- c(twoddpcr_abbrev_labels(ch1_abbrev, ch2_abbrev), "Rain", "N/A")
+  accent <- get_palette_accent_colors(app_settings, custom_palettes, n = 4)
 
   final_centres <- NULL
   if (isTRUE(show_final_centres)) {
@@ -608,23 +614,23 @@ build_twoddpcr_results_plot <- function(plate,
 
     if (identical(base_method, "thresholds") && is.finite(ch1_threshold) && is.finite(ch2_threshold)) {
       p <- p +
-        ggplot2::geom_hline(yintercept = ch1_threshold, linewidth = 0.8) +
-        ggplot2::geom_vline(xintercept = ch2_threshold, linewidth = 0.8)
+        ggplot2::geom_hline(yintercept = ch1_threshold, linewidth = 0.8, color = accent[[1]]) +
+        ggplot2::geom_vline(xintercept = ch2_threshold, linewidth = 0.8, color = accent[[2]])
     } else if (identical(base_method, "grid")) {
       rectangles <- build_twoddpcr_grid_rectangles(grid_thresholds)
       p <- p +
         ggplot2::geom_rect(data = rectangles$NN, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-          inherit.aes = FALSE, fill = NA, colour = "green4", linewidth = 0.7) +
+          inherit.aes = FALSE, fill = NA, colour = accent[[1]], linewidth = 0.7) +
         ggplot2::geom_rect(data = rectangles$NP, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-          inherit.aes = FALSE, fill = NA, colour = "green4", linewidth = 0.7) +
+          inherit.aes = FALSE, fill = NA, colour = accent[[2]], linewidth = 0.7) +
         ggplot2::geom_rect(data = rectangles$PN, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-          inherit.aes = FALSE, fill = NA, colour = "green4", linewidth = 0.7) +
+          inherit.aes = FALSE, fill = NA, colour = accent[[3]], linewidth = 0.7) +
         ggplot2::geom_rect(data = rectangles$PP, ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-          inherit.aes = FALSE, fill = NA, colour = "green4", linewidth = 0.7)
+          inherit.aes = FALSE, fill = NA, colour = accent[[4]], linewidth = 0.7)
     }
   }
 
-  p
+  apply_app_discrete_scales(p, app_settings = app_settings, custom_palettes = custom_palettes)
 }
 
 build_twoddpcr_summary_table <- function(plate,

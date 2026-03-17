@@ -35,7 +35,7 @@ build_empty_plot <- function(message) {
     )
 }
 
-build_scatter_plot <- function(df, settings) {
+build_scatter_plot <- function(df, settings, app_settings = get_default_app_settings(), custom_palettes = list()) {
   if (nrow(df) == 0) {
     return(build_empty_plot("Keine Daten verfügbar"))
   }
@@ -74,7 +74,7 @@ build_scatter_plot <- function(df, settings) {
     )
   }
 
-  ggplot2::ggplot(df, base_aes) +
+  p <- ggplot2::ggplot(df, base_aes) +
     ggplot2::geom_point(alpha = settings$alpha, size = 1.6) +
     ggplot2::labs(
       title = settings$title,
@@ -90,11 +90,12 @@ build_scatter_plot <- function(df, settings) {
       axis.title.y = ggplot2::element_text(size = settings$y_text_size),
       panel.grid.minor = ggplot2::element_blank(),
       legend.position = "bottom"
-    ) +
-    ggplot2::scale_color_brewer(palette = "Dark2")
+    )
+
+  apply_app_discrete_scales(p, app_settings = app_settings, custom_palettes = custom_palettes)
 }
 
-build_histogram_plot <- function(df, settings) {
+build_histogram_plot <- function(df, settings, app_settings = get_default_app_settings(), custom_palettes = list()) {
   if (nrow(df) == 0) {
     return(build_empty_plot("Keine Daten verfügbar"))
   }
@@ -111,7 +112,7 @@ build_histogram_plot <- function(df, settings) {
     base_aes <- ggplot2::aes(x = .data[[x_col]], fill = .data[[fill_col]])
   }
 
-  ggplot2::ggplot(df, base_aes) +
+  p <- ggplot2::ggplot(df, base_aes) +
     ggplot2::geom_histogram(
       bins = settings$bins,
       alpha = 0.7,
@@ -132,8 +133,9 @@ build_histogram_plot <- function(df, settings) {
       axis.title.y = ggplot2::element_text(size = settings$y_text_size),
       panel.grid.minor = ggplot2::element_blank(),
       legend.position = "bottom"
-    ) +
-    ggplot2::scale_fill_brewer(palette = "Set2")
+    )
+
+  apply_app_discrete_scales(p, app_settings = app_settings, custom_palettes = custom_palettes)
 }
 
 prepare_interactive_plot_data <- function(df, max_points = 60000L) {

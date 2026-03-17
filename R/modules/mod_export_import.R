@@ -47,7 +47,9 @@ mod_export_import_server <- function(id, state) {
           path = file,
           dpcr_data = state$dpcr_data,
           validation_report = state$validation_report,
-          metadata = state$metadata
+          metadata = state$metadata,
+          app_settings = state$app_settings,
+          custom_palettes = state$custom_palettes
         )
       }
     )
@@ -69,6 +71,8 @@ mod_export_import_server <- function(id, state) {
 
       state$dpcr_data <- loaded$dpcr_data
       state$validation_report <- loaded$validation_report
+      state$app_settings <- loaded$app_settings
+      state$custom_palettes <- loaded$custom_palettes
       state$metadata <- c(
         loaded$metadata,
         list(

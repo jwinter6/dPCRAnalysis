@@ -61,7 +61,7 @@ mod_overview_ui <- function(id) {
         solidHeader = TRUE,
         shiny::uiOutput(ns("plotly_sampling_info")),
         shiny::tabsetPanel(
-          shiny::tabPanel("Plot", shiny::plotOutput(ns("scatter_plot"), height = "520px")),
+          shiny::tabPanel("Plot", plot_output_with_download(ns, "scatter_plot", height = "520px")),
           shiny::tabPanel("Interaktiver Plot", plotly::plotlyOutput(ns("scatter_plotly"), height = "520px"))
         )
       )
@@ -82,6 +82,13 @@ mod_overview_ui <- function(id) {
 
 mod_overview_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
+    plot_settings <- shiny::reactive({
+      list(
+        app_settings = sanitize_app_settings(state$app_settings, state$custom_palettes),
+        custom_palettes = sanitize_custom_palettes(state$custom_palettes)
+      )
+    })
+
     plate_choices <- shiny::reactive({
       df <- state$dpcr_data
       if (is.null(df) || nrow(df) == 0) {
@@ -171,7 +178,12 @@ mod_overview_server <- function(id, state) {
     })
 
     scatter_plot_reactive <- shiny::reactive({
-      build_scatter_plot(filtered_data(), scatter_settings())
+      build_scatter_plot(
+        filtered_data(),
+        scatter_settings(),
+        app_settings = plot_settings()$app_settings,
+        custom_palettes = plot_settings()$custom_palettes
+      )
     })
 
     interactive_scatter_context <- shiny::reactive({
@@ -181,7 +193,12 @@ mod_overview_server <- function(id, state) {
       )
 
       list(
-        plot = build_scatter_plot(sampled$data, scatter_settings()),
+        plot = build_scatter_plot(
+          sampled$data,
+          scatter_settings(),
+          app_settings = plot_settings()$app_settings,
+          custom_palettes = plot_settings()$custom_palettes
+        ),
         sampled = sampled$sampled,
         original_n = sampled$original_n,
         used_n = sampled$used_n
@@ -220,5 +237,13 @@ mod_overview_server <- function(id, state) {
       info <- interactive_scatter_context()
       make_interactive_plot(info$plot, tooltip = "text", use_webgl = isTRUE(input$use_webgl))
     })
+
+    register_plot_download(
+      output = output,
+      output_id = "scatter_plot_download",
+      plot_fn = function() scatter_plot_reactive(),
+      export_settings_fn = function() sanitize_app_settings(state$app_settings, state$custom_palettes)$export,
+      filename_prefix = "overview_scatter_plot"
+    )
   })
 }
