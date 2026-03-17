@@ -134,11 +134,11 @@ mod_data_load_server <- function(id, state) {
         imported_df <- tryCatch(
           {
             if (device == "qiaquity") {
-              import_qiaquity_csv(file_path)
+              import_qiaquity_csv(file_path, file_name = file_name)
             } else if (device == "roche") {
-              import_roche_csv(file_path)
+              import_roche_csv(file_path, file_name = file_name)
             } else if (device == "biorad") {
-              import_biorad_csv(file_path)
+              import_biorad_csv(file_path, file_name = file_name)
             } else {
               new_empty_dpcr_data()
             }
@@ -157,7 +157,7 @@ mod_data_load_server <- function(id, state) {
           }
         )
 
-        if (device %in% c("roche", "biorad")) {
+        if (device %in% c("biorad")) {
           import_issues <- dplyr::bind_rows(
             import_issues,
             tibble::tibble(
@@ -175,7 +175,10 @@ mod_data_load_server <- function(id, state) {
             tibble::tibble(
               severity = "error",
               field = "device_type",
-              message = sprintf("Gerätetyp für Datei '%s' konnte nicht erkannt werden.", file_name),
+              message = sprintf(
+                "Gerätetyp für Datei '%s' konnte nicht erkannt werden. Unterstützt sind aktuell Qiagen QIAcuity und Roche Digital LightCycler CSV.",
+                file_name
+              ),
               n_rows = NA_integer_
             )
           )

@@ -22,6 +22,24 @@ test_that("import_qiaquity_csv maps columns and schema correctly", {
   expect_equal(out$source_file[[1]], basename(tmp))
 })
 
+test_that("import_qiaquity_csv keeps original uploaded filename when provided", {
+  tmp <- tempfile(fileext = ".csv")
+
+  writeLines(
+    c(
+      "sep=,",
+      "Plate name,Plate ID,Plate type,Well,Sample,Channel,Cycled volume,Threshold,Partition,Is invalid,Is positive,RFU,REF",
+      "Plate_A,plate-001,Nanoplate 26K 8-well,A1,Sample_1,C,24.066,19.38,1,0,1,105.4,Std-Ref"
+    ),
+    con = tmp,
+    useBytes = TRUE
+  )
+
+  out <- import_qiaquity_csv(tmp, file_name = "uploaded_name.csv")
+
+  expect_equal(out$source_file[[1]], "uploaded_name.csv")
+})
+
 test_that("import_qiaquity_csv supports REF layout without channel column", {
   tmp <- tempfile(fileext = ".csv")
 

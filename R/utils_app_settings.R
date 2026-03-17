@@ -97,7 +97,13 @@ sanitize_custom_palettes <- function(custom_palettes = list()) {
     out[[palette_names[[i]]]] <- colors
   }
 
-  out[!vapply(out, is.null, logical(1))]
+  out <- out[!vapply(out, is.null, logical(1))]
+
+  if (length(out) == 0) {
+    return(list())
+  }
+
+  out
 }
 
 custom_palette_id <- function(name) {
@@ -122,8 +128,8 @@ custom_palette_name_from_id <- function(palette_id) {
 
 palette_choice_labels <- function(custom_palettes = list()) {
   builtin <- get_builtin_palette_definitions()
-  choices <- vapply(builtin, function(def) def$label, character(1))
-  names(choices) <- names(builtin)
+  builtin_labels <- vapply(builtin, function(def) def$label, character(1))
+  choices <- stats::setNames(names(builtin), builtin_labels)
 
   custom_palettes <- sanitize_custom_palettes(custom_palettes)
   if (length(custom_palettes) == 0) {
@@ -131,11 +137,29 @@ palette_choice_labels <- function(custom_palettes = list()) {
   }
 
   custom_choices <- stats::setNames(
-    vapply(names(custom_palettes), function(name) sprintf("Eigene Palette: %s", name), character(1)),
-    vapply(names(custom_palettes), custom_palette_id, character(1))
+    vapply(names(custom_palettes), custom_palette_id, character(1)),
+    vapply(names(custom_palettes), function(name) sprintf("Eigene Palette: %s", name), character(1))
   )
 
   c(choices, custom_choices)
+}
+
+get_palette_choice_label <- function(palette_id, custom_palettes = list()) {
+  choices <- palette_choice_labels(custom_palettes)
+  palette_id <- as.character(palette_id)
+  palette_id <- palette_id[!is.na(palette_id) & nzchar(palette_id)]
+
+  if (length(palette_id) == 0) {
+    return(NULL)
+  }
+
+  match_idx <- match(palette_id[[1]], unname(choices))
+
+  if (is.na(match_idx)) {
+    return(NULL)
+  }
+
+  names(choices)[[match_idx]]
 }
 
 get_default_export_settings <- function() {
@@ -198,7 +222,7 @@ sanitize_app_settings <- function(app_settings = NULL, custom_palettes = list())
     app_settings <- utils::modifyList(defaults, app_settings)
   }
 
-  palette_choices <- names(palette_choice_labels(custom_palettes))
+  palette_choices <- unname(palette_choice_labels(custom_palettes))
   palette_id <- as.character(app_settings$palette_id)
   palette_id <- palette_id[!is.na(palette_id) & nzchar(palette_id)]
   palette_id <- if (length(palette_id) == 0) APP_DEFAULT_PALETTE_ID else palette_id[[1]]

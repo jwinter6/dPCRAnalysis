@@ -6,6 +6,28 @@ count_missing_values <- function(x) {
   sum(is.na(x))
 }
 
+count_missing_values_with_device_exceptions <- function(df, column_name) {
+  if (!column_name %in% names(df)) {
+    return(0L)
+  }
+
+  values <- df[[column_name]]
+  missing_mask <- if (is.character(values)) {
+    is.na(values) | trimws(values) == ""
+  } else {
+    is.na(values)
+  }
+
+  device_type <- if ("device_type" %in% names(df)) as.character(df$device_type) else rep(NA_character_, length(values))
+  roche_optional_columns <- c("volume", "threshold", "positive_control")
+
+  if (column_name %in% roche_optional_columns) {
+    missing_mask <- missing_mask & device_type != "roche"
+  }
+
+  sum(missing_mask, na.rm = TRUE)
+}
+
 validate_dpcr_data <- function(df) {
   issues <- empty_issues_table()
 
@@ -79,7 +101,7 @@ validate_dpcr_data <- function(df) {
   clean <- coerce_dpcr_schema(raw_df)
 
   for (col in DPCR_REQUIRED_COLUMNS) {
-    missing_count <- count_missing_values(clean[[col]])
+    missing_count <- count_missing_values_with_device_exceptions(clean, col)
     if (missing_count > 0) {
       add_issue(
         "warning",

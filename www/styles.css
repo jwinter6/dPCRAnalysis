@@ -1,3 +1,9 @@
+/* Theme tokens */
+:root {
+  --app-primary-color: #24527a;
+  --app-accent-color: #2f9e8f;
+}
+
 /* Grundlayout */
 .content-wrapper,
 .right-side {
@@ -21,7 +27,7 @@
 
 .skin-blue .main-sidebar .sidebar .sidebar-menu .active > a,
 .skin-blue .main-sidebar .sidebar .sidebar-menu a:hover {
-  background: #2f9e8f;
+  background: var(--app-accent-color);
   color: #ffffff;
 }
 
@@ -32,7 +38,7 @@
 }
 
 .box.box-primary > .box-header {
-  background: #24527a;
+  background: var(--app-primary-color);
   color: #ffffff;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
@@ -54,17 +60,17 @@
 }
 
 .btn-success {
-  background-color: #2b8a3e;
-  border-color: #2b8a3e;
+  background-color: var(--app-accent-color);
+  border-color: var(--app-accent-color);
 }
 
 .btn-primary {
-  background-color: #24527a;
-  border-color: #24527a;
+  background-color: var(--app-primary-color);
+  border-color: var(--app-primary-color);
 }
 
 .nav-tabs-custom > .nav-tabs > li.active {
-  border-top-color: #24527a;
+  border-top-color: var(--app-primary-color);
 }
 
 .dataTables_wrapper .dataTables_filter input {

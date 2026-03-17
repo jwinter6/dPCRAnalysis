@@ -15,7 +15,10 @@ mod_settings_ui <- function(id) {
           selected = APP_DEFAULT_PALETTE_ID
         ),
         shiny::helpText("Die Auswahl gilt für alle ggplot2-Plots der App."),
-        shiny::uiOutput(ns("active_palette_preview"))
+        shiny::uiOutput(ns("active_palette_preview")),
+        shiny::hr(),
+        shiny::uiOutput(ns("storage_scope_info")),
+        shiny::actionButton(ns("clear_browser_preferences"), "Gespeicherte Browser-Einstellungen löschen")
       ),
       shinydashboard::box(
         width = 6,
@@ -271,11 +274,24 @@ mod_settings_server <- function(id, state) {
       shiny::showNotification(sprintf("Palette '%s' gelöscht.", selected_palette), type = "message")
     })
 
+    shiny::observeEvent(input$clear_browser_preferences, {
+      state$skip_next_user_preferences_save <- TRUE
+      state$custom_palettes <- list()
+      state$app_settings <- get_default_app_settings()
+
+      session$sendCustomMessage(
+        "userPreferences:clear",
+        list(userId = resolve_browser_user_id(state$current_user_id, NULL, fallback = resolve_browser_user_id(session$user, NULL)))
+      )
+
+      shiny::showNotification("Gespeicherte Browser-Einstellungen wurden für den aktuellen User gelöscht.", type = "message")
+    })
+
     output$active_palette_preview <- shiny::renderUI({
       colors <- get_palette_preview_colors(current_settings(), current_custom_palettes(), n = 8)
 
       shiny::tagList(
-        shiny::tags$p(class = "text-muted", sprintf("Aktiv: %s", palette_choice_labels(current_custom_palettes())[[current_settings()$palette_id]])),
+        shiny::tags$p(class = "text-muted", sprintf("Aktiv: %s", get_palette_choice_label(current_settings()$palette_id, current_custom_palettes()))),
         build_palette_preview(colors)
       )
     })
@@ -319,6 +335,23 @@ mod_settings_server <- function(id, state) {
 
       colors <- parse_palette_color_input(input$custom_palette_colors)
       build_palette_preview(colors)
+    })
+
+    output$storage_scope_info <- shiny::renderUI({
+      user_id <- resolve_browser_user_id(state$current_user_id, NULL, fallback = resolve_browser_user_id(session$user, NULL))
+
+      shiny::tags$div(
+        class = "alert alert-secondary",
+        shiny::tags$p(
+          shiny::tags$strong("Browser-Persistenz aktiv"),
+          shiny::tags$br(),
+          sprintf("Storage-Key: app:prefs:%s", user_id)
+        ),
+        shiny::tags$p(
+          class = "text-muted",
+          "UI-Einstellungen werden pro User-ID im Browser gespeichert. Falls keine Server-User-ID vorhanden ist, wird ?userId=... aus der URL genutzt."
+        )
+      )
     })
 
     output$export_validation <- shiny::renderUI({

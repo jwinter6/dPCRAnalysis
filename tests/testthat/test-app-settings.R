@@ -14,6 +14,14 @@ test_that("default app settings keep ggplot2 palette and export defaults", {
   expect_equal(get_palette_preview_colors(settings, list(), n = 4), scales::hue_pal()(4))
 })
 
+test_that("palette choices use labels for display and ids as values", {
+  choices <- palette_choice_labels(list(MeinePalette = c("#112233", "#445566")))
+
+  expect_equal(unname(choices[["Okabe-Ito"]]), "okabe_ito")
+  expect_equal(unname(choices[["Eigene Palette: MeinePalette"]]), custom_palette_id("MeinePalette"))
+  expect_equal(get_palette_choice_label("okabe_ito"), "Okabe-Ito")
+})
+
 test_that("hex palette validation rejects invalid colors", {
   valid <- validate_hex_colors(c("#112233", "#ABCDEF"))
   invalid <- validate_hex_colors(c("#11223G", "blue"))

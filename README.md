@@ -1,7 +1,7 @@
 # dPCR Analyseplattform (R/Shiny)
 
-Modulare Shiny-Web-App zur Analyse digitaler PCR-Daten mit Fokus auf **Qiagen QIAcuity**.
-Roche Digital LightCycler und Bio-Rad QX sind als Importer-Platzhalter vorbereitet.
+Modulare Shiny-Web-App zur Analyse digitaler PCR-Daten mit Fokus auf **Qiagen QIAcuity** und **Roche Digital LightCycler**.
+Bio-Rad QX ist als Importer-Platzhalter vorbereitet.
 
 ## Features
 
@@ -17,6 +17,7 @@ Roche Digital LightCycler und Bio-Rad QX sind als Importer-Platzhalter vorbereit
   - Einstellungen
   - Hilfe
 - QIAcuity-CSV-Import (`skip = 1`, Mapping auf internes Standardformat)
+- Roche-Digital-LightCycler-CSV-Import mit Wide-zu-Long-Transformation von Kanalspalten (`Channel1...ChannelN` + `Flag`)
 - Plausibilitäts- und Validierungschecks mit Report
 - Interaktive Übersicht (DT + ggplot2 + plotly)
 - Qualitätsseite mit Kennzahlen und zusätzlichen Plots
@@ -74,6 +75,7 @@ Roche Digital LightCycler und Bio-Rad QX sind als Importer-Platzhalter vorbereit
 │  │  ├─ test-app-settings.R
 │  │  ├─ helper-twoddpcr.R
 │  │  ├─ test-import-qiaquity.R
+│  │  ├─ test-import-roche.R
 │  │  ├─ test-quality-metrics.R
 │  │  ├─ test-sample-analysis-module.R
 │  │  ├─ test-sample-analysis-utils.R
@@ -117,12 +119,29 @@ Rscript -e "shiny::runApp()"
 ## Daten laden
 
 1. Seite **Daten laden** öffnen
-2. QIAcuity-CSV-Dateien hochladen
+2. QIAcuity- oder Roche-Digital-LightCycler-CSV-Dateien hochladen
 3. **Analyse starten** klicken
 4. Validierungsreport prüfen
 5. In **Übersicht** und **Qualität** interaktiv auswerten
 
 Beispieldateien liegen in `Example_Data/` (Fallback: `exampledata/`).
+
+## Unterstützte Dateiformate
+
+- **Qiagen QIAcuity CSV**
+  - Header mit Basisfeldern wie `Plate name`, `Plate ID`, `Well`, `Sample`
+  - Channel-Layout oder REF-Layout
+- **Roche Digital LightCycler CSV**
+  - Wide-Format mit kanalweisen Fluoreszenzspalten wie `Channel1,Channel2,...,Channel7`
+  - Zusatzspalte `Flag` wird auf `invalid_partition` und `reference` gemappt
+  - Die Importlogik transformiert jede Eingabezeile in mehrere interne Messungen: `Zeile x aktiver Kanal`
+  - `partition` wird aus der Zeilennummer erzeugt
+  - `plate_name` wird aus dem Dateinamen vor dem ersten Unterstrich abgeleitet: `^[^_]+`
+  - `sample` wird aus dem Dateinamen nach dem letzten Unterstrich vor `.csv` abgeleitet: `[^_]+$`
+  - Beispiel: `plate1-2502180201270663301615_lane6_E13.csv` ergibt `plate_name = plate1-2502180201270663301615` und `sample = E13`
+  - Falls vorhanden, wird ein `lane...`-Segment zusätzlich als `well` übernommen
+
+Die Roche-Beispieldateien liegen im Projektordner `exampledata/` und können direkt über den Upload getestet werden.
 
 ## Einstellungen und Plot-Export
 
@@ -136,6 +155,10 @@ Die Seite **Einstellungen** verwaltet globale Plot-Standards:
   - Exportparameter gelten für alle Buttons **`Download Plot`** unter ggplot2-Plots.
   - Defaultwerte: `5 x 5`, `96 dpi`, `png`.
   - Unterstützte Formate: `png`, `pdf`, `jpeg`.
+- **Browser-Persistenz pro User**
+  - UI-Einstellungen werden clientseitig unter `app:prefs:{userId}` gespeichert.
+  - Die App nutzt dafür bevorzugt `localStorage` und fällt bei Bedarf auf Cookies zurück.
+  - Als User-ID dient zuerst `session$user`; falls nicht vorhanden, wird `?userId=` bzw. `?user_id=` aus der URL verwendet.
 
 Die Einstellungen werden zusammen mit `.RData`-Analysen exportiert und beim Laden wiederhergestellt.
 
@@ -198,6 +221,6 @@ Dann im Browser: `http://localhost:3838`
 ## Hinweise
 
 - Export/Import speichert mindestens: `dpcr_data`, `validation_report`, `metadata`, `app_settings`, `custom_palettes`.
-- Roche/Bio-Rad-Importer liefern aktuell Platzhalter-Hinweise und können später erweitert werden.
+- Bio-Rad-Importer liefert aktuell einen Platzhalter-Hinweis und kann später erweitert werden.
 - `twoddpcr` benötigt Zwei-Kanal-Daten. Reine Referenzkanäle ohne Partnerkanal können dort nicht klassifiziert werden.
 - Die inhaltliche Dokumentation zur neuen Einstellungsseite liegt zusätzlich in der App unter **Hilfe**.

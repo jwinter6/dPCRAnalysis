@@ -26,7 +26,7 @@ mod_home_ui <- function(id) {
         solidHeader = TRUE,
         shiny::tags$ul(
           shiny::tags$li("Qiagen QIAcuity: vollständig implementiert"),
-          shiny::tags$li("Roche Digital LightCycler: Platzhalter (Importer vorbereitet)"),
+          shiny::tags$li("Roche Digital LightCycler: CSV-Import im Kanalspalten-Layout implementiert"),
           shiny::tags$li("Bio-Rad QX 100/200/400/600/700/800: Platzhalter (Importer vorbereitet)")
         )
       ),

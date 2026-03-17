@@ -1,4 +1,4 @@
-import_qiaquity_csv <- function(path) {
+import_qiaquity_csv <- function(path, file_name = basename(path)) {
   raw <- readr::read_csv(
     file = path,
     skip = 1,
@@ -49,7 +49,7 @@ import_qiaquity_csv <- function(path) {
       invalid_partition = parse_logical_like(invalid_partition),
       positive_control = parse_logical_like(positive_control),
       device_type = "qiaquity",
-      source_file = basename(path)
+      source_file = file_name
     )
   } else if (has_ref_layout) {
     if (ncol(raw) < 12) {
@@ -91,7 +91,7 @@ import_qiaquity_csv <- function(path) {
       rfu = parse_numeric_safe(rfu),
       invalid_partition = parse_logical_like(invalid_partition),
       device_type = "qiaquity",
-      source_file = basename(path)
+      source_file = file_name
     )
   } else {
     stop(sprintf("Unbekanntes QIAcuity-Layout in Datei '%s'.", basename(path)))

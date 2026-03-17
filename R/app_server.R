@@ -4,8 +4,12 @@ app_server <- function(input, output, session) {
     validation_report = empty_issues_table(),
     metadata = list(created_at = Sys.time(), app_version = APP_VERSION),
     app_settings = get_default_app_settings(),
-    custom_palettes = list()
+    custom_palettes = list(),
+    current_user_id = NULL,
+    skip_next_user_preferences_save = FALSE
   )
+
+  register_user_preferences_sync(state, input, session)
 
   mod_home_server("home", state)
   mod_data_load_server("data_load", state)

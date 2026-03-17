@@ -20,7 +20,8 @@ app_ui <- function() {
     ),
     body = shinydashboard::dashboardBody(
       shiny::tags$head(
-        shiny::tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
+        shiny::tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
+        shiny::tags$script(src = "user-preferences-store.js")
       ),
       shinydashboard::tabItems(
         shinydashboard::tabItem(tabName = "home", mod_home_ui("home")),
